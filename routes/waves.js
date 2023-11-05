@@ -6,7 +6,8 @@ const sql = require("../db");
 
 // Get data API call
 router.get("/getData", async (req, res) => {
-  const date = req.query.date || "2023-11-07T00:00:00Z";
+  const date = req.query.date || "2023-11-10T00:00:00Z";
+  const sqlData = req.query?.date?.split('T')[0] || '2023-11-05';
   const longitudeFromQuery = req.query.longitude || "146.199";
   const latitudeFromQuery = req.query.latitude || "12.1498";
   const longitude = parseFloat(longitudeFromQuery).toFixed(3);
@@ -14,7 +15,9 @@ router.get("/getData", async (req, res) => {
   // tries to get data from database
   const selectQuery =
     "SELECT * FROM waves WHERE date = ? AND latitude = ? AND longitude = ?";
+  
   const selectValues = [date, latitude, longitude];
+  // get cache response
   try {
     const [results, fields] = await sql
       .promise()
@@ -63,15 +66,17 @@ router.get("/getData", async (req, res) => {
           1,
           1
         );
+        // calculate wavelengths
         formattedData.wave_length_1 = wavelengthCalculator(formattedData.mean_wave_period_first_swell, formattedData.significant_wave_height_first_swell);
         formattedData.wave_length_2 = wavelengthCalculator(formattedData.mean_wave_period_second_swell, formattedData.significant_wave_height_second_swell);
         formattedData.wave_length_3 = wavelengthCalculator(formattedData.mean_wave_period_third_swell, formattedData.significant_wave_height_third_swell);
-        console.log(formattedData, "formattedData from the API");
+        // insert record to DB for cache purposes
         const insertQuery = `INSERT INTO waves (latitude, longitude, date, mean_wave_direction, mean_wave_direction_converted, significant_wave_height_first_swell, significant_wave_height_first_swell_converted, significant_wave_height_second_swell, significant_wave_height_second_swell_converted, significant_wave_height_third_swell, significant_wave_height_third_swell_converted, ocean_current_speed, ocean_current_speed_converted, wave_length_1, wave_length_2, wave_length_3) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        console.log(date.split('T')[0], "check!!!");
         const insertValues = [
           formattedData.latitude,
           formattedData.longitude,
-          new Date(), // Date
+          sqlData,
           formattedData.mean_wave_direction,
           formattedData.mean_wave_direction,
           formattedData.significant_wave_height_first_swell,
@@ -82,9 +87,9 @@ router.get("/getData", async (req, res) => {
           formattedData.significant_wave_height_third_swell_converted,
           formattedData.ocean_current_speed,
           formattedData.ocean_current_speed,
-          formattedData.formattedData.wave_length_1,
-          formattedData.formattedData.wave_length_2,
-          formattedData.formattedData.wave_length_3,
+          formattedData.wave_length_1,
+          formattedData.wave_length_2,
+          formattedData.wave_length_3
         ];
         sql.query(insertQuery, insertValues, (error, results, fields) => {
           if (error) {
@@ -106,7 +111,6 @@ router.get("/getData", async (req, res) => {
             } else {
               res.status(500).json({ error: "Failed to get the last inserted ID" });
             }
-            // res.status(200).json({ data: results, message: "API RESP DATA" });
           }
         });
 
@@ -118,6 +122,7 @@ router.get("/getData", async (req, res) => {
   }
 });
 
+// calculate rounding for wave heights
 function calculator(value, inMin, inMax, outMin, outMax, decimalPlaces) {
   // Check for out-of-range input
   if (value < inMin) {
@@ -135,10 +140,15 @@ function calculator(value, inMin, inMax, outMin, outMax, decimalPlaces) {
   return Math.round(mappedValue * multiplier) / multiplier;
 }
 
+// calculate wave lengths
 function wavelengthCalculator(wavePeriod, SignificantWaveHeight) {
   // failsafe to prevent if period is 0
   if (wavePeriod === 0) {
     wavePeriod = 1;
+  }
+  // failsafe to prevent if height is 0
+  if(SignificantWaveHeight === 0) {
+    SignificantWaveHeight = 0.1
   }
   // Calculate wave speed
   const waveSpeed = 1.56 * Math.sqrt(9.81 * SignificantWaveHeight);
@@ -148,14 +158,5 @@ function wavelengthCalculator(wavePeriod, SignificantWaveHeight) {
   const wavelength = waveSpeed / frequency;
   return wavelength.toFixed(2);
 }
-// test
-router.get("/test", (req, res) => {
-  // sample return suppliers
-  sql.query("SELECT * FROM users", (error, results, fields) => {
-    if (error) throw error;
-    res.setHeader("Content-Type", "application/json");
-    res.status(200).json({ data: results });
-  });
-});
 
 module.exports = router;
