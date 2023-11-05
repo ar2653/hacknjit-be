@@ -43,5 +43,5 @@ app.use((req, res, next) => {
 
 // Start the Express server
 app.listen(port, () => {
-  console.log(`Space server is listening on port ${port}`);
+  console.log(`Ocean server is listening on port ${port}`);
 });
