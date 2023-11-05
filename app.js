@@ -30,7 +30,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/name", (req, res, next) => {
-  res.send("Welcome to Datawaves backend!!!");
+  res.send("Welcome to Wave dynamics backend!!!");
 });
 
 
