@@ -84,8 +84,9 @@ router.get("/getData", async (req, res) => {
 
   // logical data
   try {
-    const date = req.query.date || "2023-11-05T00:00:00Z";
-    const sqlData = req.query?.date?.split("T")[0] || "2023-11-05";
+    const date = req.query.date;
+    console.log(date);
+    const sqlData = req.query?.date?.split("T")[0];
     const longitudeFromQuery = req.query.longitude || "123.199";
     const latitudeFromQuery = req.query.latitude || "12.1498";
     const longitude = parseFloat(longitudeFromQuery).toFixed(3);
@@ -110,14 +111,12 @@ router.get("/getData", async (req, res) => {
       res.status(500).json({ error: "Error querying the database" });
       return;
     }
-
     // If data is not found, go for the API
     const apiUrl = `https://${process.env.METEO_API_USERNAME}:${process.env.METEO_API_PASSWORD}@api.meteomatics.com/${date}/mean_wave_direction_first_swell:d,mean_wave_direction_second_swell:d,mean_wave_direction_third_swell:d,significant_wave_height_first_swell:m,significant_wave_height_second_swell:m,significant_wave_height_third_swell:m,ocean_current_speed:kn,mean_wave_period_first_swell:s,mean_wave_period_second_swell:s,mean_wave_period_third_swell:s/${latitude},${longitude}/json`;
-
     try {
       const response = await axios.get(apiUrl);
       const apiResponse = response.data;
-
+      console.log(apiResponse, "apiResponse")
       // Process the API response data
       const formattedData = {
         latitude: apiResponse.data[0].coordinates[0].lat,
@@ -167,6 +166,38 @@ router.get("/getData", async (req, res) => {
         formattedData.mean_wave_period_third_swell,
         formattedData.significant_wave_height_third_swell
       );
+      console.log(formattedData, "formatted");
+      // check if the selected area is land and return no waves
+      const keysToConvert = [
+        'mean_wave_direction_first_swell',
+        'mean_wave_direction_second_swell',
+        'mean_wave_direction_third_swell',
+        'significant_wave_height_first_swell',
+        'significant_wave_height_second_swell',
+        'significant_wave_height_third_swell',
+        'ocean_current_speed',
+        'mean_wave_period_first_swell',
+        'mean_wave_period_second_swell',
+        'mean_wave_period_third_swell',
+      ];
+      keysToConvert.forEach(key => {
+        if (formattedData[key] === -666) {
+          formattedData[key] = 0;
+        }
+      });
+      const walelengthValues = [
+        'significant_wave_height_first_swell_converted',
+        'significant_wave_height_second_swell_converted',
+        'significant_wave_height_third_swell_converted',
+        'wave_length_1',
+        'wave_length_2',
+        'wave_length_3'
+      ];
+      walelengthValues.forEach(key => {
+        if (keysToConvert.some(k => formattedData[k] === 0)) {
+          formattedData[key] = 0;
+        }
+      });
       // Insert record to DB for cache purposes
       const insertQuery = `INSERT INTO waves (latitude, longitude, date, mean_wave_direction_first_swell, mean_wave_direction_second_swell, mean_wave_direction_third_swell, significant_wave_height_first_swell, significant_wave_height_first_swell_converted, significant_wave_height_second_swell, significant_wave_height_second_swell_converted, significant_wave_height_third_swell, significant_wave_height_third_swell_converted, ocean_current_speed, ocean_current_speed_converted, wave_length_1, wave_length_2, wave_length_3) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
       const insertValues = [
@@ -224,15 +255,35 @@ router.get("/getData", async (req, res) => {
         return;
       }
     } catch (apiError) {
-      console.error("Error in API request:", apiError);
+      // console.error("Error in API request:", apiError);
       res.status(500).json({ error: "Error in API request" });
     }
   } catch (error) {
-    console.error("Internal server error:", error);
+    // console.error("Internal server error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
+// API endpoint to get users
+router.get('/users', async (req, res) => {
+  try {
+    // Perform the SQL query to fetch users
+    const query = 'SELECT * FROM users';
+    const [results, fields] = await sql
+      .promise()
+      .query(query);
+
+    // Check if any users were fetched
+    if (results.length > 0) {
+      res.status(200).json({ data: results, message: 'Users fetched successfully' });
+    } else {
+      res.status(404).json({ message: 'No users found' });
+    }
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Error fetching users' });
+  }
+});
 // calculate rounding for wave heights
 function calculator(value, inMin, inMax, outMin, outMax, decimalPlaces) {
   // Check for out-of-range input

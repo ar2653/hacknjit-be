@@ -166,9 +166,9 @@ Potential future developments may include:
 Front End - https://github.com/tabrezdn1/hacknjit-fe#readme
 
 ### Meet the Team:
-- Shaik Tabrez <p><img  src="./st.jpeg"  width=50  height=50><br><a href="https://www.linkedin.com/in/shaik-tabrez/">LinkedIn </a> <br> <a href="https://github.com/tabrezdn1">Github</a>
 - Ankush Ranapure <p><img  src="./ar.jpeg"  width=50  height=50><br> <a href="https://www.linkedin.com/in/ankush-ranapure/">LinkedIn </a><br> <a href="https://github.com/ar2653">Github</a>
-- Richa Singh <p><img  src="./rs.jpeg"  width=50  height=50><br> <a href="https://www.linkedin.com/in/richa-singh-78935438/">LinkedIn </a><br> <a href="https://github.com/richa-bsingh">Github</a>
+- Shaik Tabrez <p><img  src="./st.jpeg"  width=50  height=50><br><a href="https://www.linkedin.com/in/shaik-tabrez/">LinkedIn </a> <br> <a href="https://github.com/tabrezdn1">Github</a>
+
 
 ### Roadmap to Development:
 #### Phase 1 - Plan the app and setup the codebase
