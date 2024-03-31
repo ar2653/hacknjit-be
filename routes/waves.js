@@ -185,7 +185,7 @@ router.get("/getData", async (req, res) => {
           formattedData[key] = 0;
         }
       });
-      const walelengthValues = [
+      const wavelengthValues = [
         'significant_wave_height_first_swell_converted',
         'significant_wave_height_second_swell_converted',
         'significant_wave_height_third_swell_converted',
@@ -193,7 +193,7 @@ router.get("/getData", async (req, res) => {
         'wave_length_2',
         'wave_length_3'
       ];
-      walelengthValues.forEach(key => {
+      wavelengthValues.forEach(key => {
         if (keysToConvert.some(k => formattedData[k] === 0)) {
           formattedData[key] = 0;
         }
